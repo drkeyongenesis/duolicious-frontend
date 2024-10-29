@@ -130,12 +130,20 @@ const EnlargeableImage = ({
         {
           width: '100%',
           aspectRatio: 1,
+
+          shadowOffset: {
+            width: 0,
+            height: 2,
+          },
+          shadowOpacity: 0.3,
+          shadowRadius: 6,
+          elevation: 6,
         },
         style,
       ]}
     >
       <ImageOrSkeleton
-        resolution={900}
+        resolution="original"
         imageUuid={imageUuid}
         imageBlurhash={imageBlurhash}
         showGradient={false}

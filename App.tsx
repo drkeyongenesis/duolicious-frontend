@@ -54,9 +54,72 @@ import { Toast } from './components/toast';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DonationNagModal } from './components/donation-nag-modal';
 
-// TODO: iOS UI testing
-// TODO: Add the ability to reply to things (e.g. pictures, quiz responses) from people's profiles. You'll need to change the navigation to make it easier to reply to things. Consider breaking profiles into sections which can be replied to, each having one image or block of text. Letting people reply to specific things on the profile will improve intro quality.
-// TODO: A profile prompts. e.g. "If I had three wishes, I'd wish for...", "My favourite move is..."
+
+import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { fetchFile, toBlobURL } from '@ffmpeg/util';
+
+function uint8ArrayToBase64(uint8Array) {
+    // Create a binary string from the Uint8Array
+    let binaryString = '';
+    for (let i = 0; i < uint8Array.length; i++) {
+        binaryString += String.fromCharCode(uint8Array[i]);
+    }
+
+    // Convert binary string to base64
+    return btoa(binaryString);
+}
+
+
+const asdf = async () => {
+    const [loaded, setLoaded] = useState(false);
+    const ffmpegRef = useRef(new FFmpeg());
+    const videoRef = useRef(null);
+    const messageRef = useRef(null);
+
+    const load = async () => {
+        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd'
+        const ffmpeg = ffmpegRef.current;
+        ffmpeg.on('log', ({ message }) => {
+            console.log(message);
+        });
+        // toBlobURL is used to bypass CORS issue, urls with the same
+        // domain can be used directly.
+        const coreURL = await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript');
+        const wasmURL = await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm');
+
+        console.log(coreURL);
+        console.log(wasmURL);
+
+        try {
+          console.log('before');
+          await ffmpeg.load({ coreURL, wasmURL });
+          console.log('after');
+        } catch (e) {
+          console.log('caught', e);
+        }
+
+        setLoaded(true);
+    }
+
+    const transcode = async () => {
+        console.log('transcoding');
+
+        const ffmpeg = ffmpegRef.current;
+        await ffmpeg.writeFile('input.webm', await fetchFile('https://raw.githubusercontent.com/ffmpegwasm/testdata/master/Big_Buck_Bunny_180_10s.webm'));
+        await ffmpeg.exec(['-i', 'input.webm', 'output.mp4']);
+        const data = await ffmpeg.readFile('output.mp4') as Uint8Array;
+
+        const blob = new Blob([data.buffer], {type: 'video/mp4'})
+
+        console.log(uint8ArrayToBase64(data.buffer));
+    }
+
+    await load();
+    await transcode();
+}
+
+
+
 
 setNofications();
 verificationWatcher();
@@ -157,6 +220,8 @@ const App = () => {
   [signedInUser, setSignedInUser] = useState<SignedInUser | undefined>();
   [referrerId, setReferrerId] = useState<string | undefined>();
   const navigationContainerRef = useRef<any>();
+
+  asdf();
 
   const loadFonts = useCallback(async () => {
     await Font.loadAsync({
@@ -338,8 +403,10 @@ const App = () => {
 
   useEffect(() => {
     (async () => {
+      console.log('1');
 
       if (!signedInUser?.personId || !signedInUser?.sessionToken) {
+        console.log('2');
         logout();
         return;
       }
@@ -351,10 +418,13 @@ const App = () => {
       const pendingClub = signedInUser?.pendingClub;
 
       if (navigationContainer && pendingClub) {
+        console.log('3');
         navigationContainer.navigate('Search');
       } else if (await parseUrl()) {
+        console.log('4');
         ; // Don't restore last navigation state
       } else if (navigationContainer && lastNavigationState) {
+        console.log('5');
         navigationContainer.reset(lastNavigationState);
       }
     })();
