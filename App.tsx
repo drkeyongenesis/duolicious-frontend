@@ -1,5 +1,4 @@
 import {
-  ActivityIndicator,
   Animated,
   Platform,
   StatusBar,
@@ -26,7 +25,7 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import * as SplashScreen from 'expo-splash-screen';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { TabBar } from './components/tab-bar';
+import { TabBar } from './components/navigation/tab-bar';
 import SearchTab from './components/search-tab';
 import { QuizTab } from './components/quiz-tab';
 import ProfileTab from './components/profile-tab';
@@ -49,6 +48,7 @@ import {
   useNotificationObserver,
   getLastNotificationResponseAsync,
 } from './notifications/notifications';
+import { getCurrentScreen, getCurrentParams } from './navigation/navigation';
 import { navigationState } from './kv-storage/navigation-state';
 import { listen, notify } from './events/events';
 import { verificationWatcher } from './verification/verification';
@@ -57,6 +57,13 @@ import { ClubItem } from './club/club';
 import { Toast } from './components/toast';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DonationNagModal } from './components/donation-nag-modal';
+import { createWebNavigator } from './components/navigation/web-navigator';
+import { isMobile } from './util/util';
+import { Logo16 } from './components/logo';
+import { useScrollbarStyle } from './components/navigation/scroll-bar-hooks';
+
+
+// TODO: Onboarding works
 
 setNofications();
 verificationWatcher();
@@ -64,7 +71,7 @@ verificationWatcher();
 SplashScreen.preventAutoHideAsync();
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Tab = isMobile() ? createBottomTabNavigator() : createWebNavigator();
 
 if (
   Platform.OS === 'android' &&
@@ -77,7 +84,7 @@ const HomeTabs = () => {
   return (
     <Tab.Navigator
       backBehavior="history"
-      screenOptions={{ headerShown: false }}
+      screenOptions={{ headerShown: false, animation: 'shift' }}
       tabBar={props => <TabBar {...props} />}
     >
       <Tab.Screen name="Q&A" component={QuizTab} />
@@ -122,7 +129,7 @@ const WebSplashScreen = ({loading}) => {
           zIndex: 999,
         }}
       >
-        <ActivityIndicator size={60} color="white"/>
+        <Logo16 size={96} fadeOutDelay={0} fadeInDelay={0} doAnimate={true} />
       </Animated.View>
     );
   }
@@ -275,7 +282,27 @@ const App = () => {
 
     notify<ClubItem[]>('updated-clubs', clubs);
 
-    if (parsedUrl) {
+    if (parsedUrl?.left === 'profile') {
+      setInitialState({
+        index: 1,
+        routes: [
+          { name: "Home" },
+          {
+            name: "Prospect Profile Screen",
+            state: {
+              routes: [
+                {
+                  name: "Prospect Profile",
+                  params: {
+                    personUuid: decodeURIComponent(parsedUrl.right)
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      });
+    } else if (parsedUrl) {
       // Navigation was already handled before logging in; Do nothing.
       ;
     } else if (notification) {
@@ -374,8 +401,14 @@ const App = () => {
   }, [fetchServerStatusState]);
 
   const onNavigationStateChange = useCallback(async (state) => {
-    if (Platform.OS === 'web') {
-      history.pushState((history?.state ?? 0) + 1, "", "#");
+    if (Platform.OS !== 'web') {
+      ; // Only update the URL bar on web
+    } else if (getCurrentScreen(state) === 'Prospect Profile Screen/Prospect Profile') {
+      const uri = `/profile/${getCurrentParams(state).personUuid}`;
+      history.pushState((history?.state ?? 0) + 1, "", uri);
+    } else {
+      const uri = "/#";
+      history.pushState((history?.state ?? 0) + 1, "", uri);
     }
 
     if (!state) return;
@@ -430,6 +463,8 @@ const App = () => {
       }
     })();
   }, [isLoading]);
+
+  useScrollbarStyle();
 
   if (serverStatus !== "ok") {
     return <UtilityScreen serverStatus={serverStatus}/>

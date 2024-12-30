@@ -5,16 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBarSpacer } from './status-bar-spacer';
 import { DefaultText } from './default-text';
 import { Logo16 } from './logo';
-
-const shadow = {
-  shadowOffset: {
-    width: 0,
-    height: 2,
-  },
-  shadowOpacity: 0.1,
-  shadowRadius: 3,
-  elevation: 8,
-};
+import { isMobile } from '../util/util';
 
 const TopNavBar = (props) => {
   return (
@@ -24,7 +15,6 @@ const TopNavBar = (props) => {
         zIndex: 999,
         width: '100%',
         overflow: 'visible',
-        ...(props.shadow === false ? {} : shadow),
         ...props.containerStyle,
       }}
     >
@@ -47,7 +37,16 @@ const TopNavBar = (props) => {
 };
 
 const DuoliciousTopNavBar = (props) => {
-  const {style, backgroundColor, textColor} = props;
+  const {
+    style,
+    backgroundColor,
+    textColor,
+    children,
+  } = props;
+
+  if (!isMobile() && !children) {
+    return <View style={{ height: 10 }} />;
+  }
 
   return (
     <TopNavBar
@@ -60,17 +59,20 @@ const DuoliciousTopNavBar = (props) => {
       }}
       backgroundColor={backgroundColor}
     >
-      <Logo16 size={16 * 2} color="#70f" rectSize={0.35} />
-      <DefaultText
-        style={{
-          fontFamily: 'TruenoBold',
-          color: textColor || '#70f',
-          fontSize: 22,
-        }}
-      >
-        Duolicious
-      </DefaultText>
-      {props.children}
+      {isMobile() && <>
+        <Logo16 size={16 * 2} color="#70f" rectSize={0.35} />
+        <DefaultText
+          style={{
+            fontFamily: 'TruenoBold',
+            color: textColor || '#70f',
+            fontSize: 22,
+          }}
+        >
+          Duolicious
+        </DefaultText>
+        </>
+      }
+      {children}
     </TopNavBar>
   );
 };

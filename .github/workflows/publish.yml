@@ -15,21 +15,40 @@ jobs:
     name: Publish to Cloudflare Pages
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set DUO_WEB_VERSION
+        id: vars
+        run: |
+          calculated_sha=$(git rev-parse --short HEAD)
+          echo "DUO_WEB_VERSION=$calculated_sha" >> $GITHUB_ENV
+
       - uses: actions/setup-node@v4
+
       - run: |
           npm install
           npx patch-package
           npx expo export --platform web
+
+          if ! patch -p0 < patches/index.html.patch
+          then
+            echo dist/index.html.rej was > /dev/stderr
+            cat dist/index.html.rej > /dev/stderr
+
+            echo
+
+            echo dist/index.html was > /dev/stderr
+            cat dist/index.html > /dev/stderr
+
+            exit 1
+          fi
 
           cat > dist/_headers <<EOF
             /*
               X-Frame-Options: DENY
               Access-Control-Allow-Origin: ${DUO_API_URL}
           EOF
-
-          sed -i 's|<meta charset="utf-8" />|&<meta name="description" content="Free dating online. Zero ads. Unlimited messages. Over 2000 match questions from anime to life goals. Fall in love and find a relationship at Duolicious."/>|g' dist/index.html
-
-          sed -i 's|shrink-to-fit=no|&, maximum-scale=1, user-scalable=no|g' dist/index.html
 
           # Cloudflare ignores directories containing the string 'node_modules'.
           # Expo generates directories containing the string 'node_modules'.
@@ -44,6 +63,7 @@ jobs:
           DUO_IMAGES_URL: https://user-images.duolicious.app
           DUO_AUDIO_URL:   https://user-audio.duolicious.app
           DUO_STATUS_URL:      https://status.duolicious.app
+          DUO_WEB_BASE_URL:       https://web.duolicious.app
       - uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

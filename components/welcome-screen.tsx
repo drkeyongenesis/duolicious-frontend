@@ -473,7 +473,7 @@ const WelcomeScreen_ = ({navigation, route}) => {
             gap: 1,
           }}
         >
-          <Logo16 size={32} rectSize={0.3} />
+          <Logo16 size={32} rectSize={0.3} doAnimate={true} />
           <Text
             style={{
               color: 'white',
@@ -575,7 +575,6 @@ const WelcomeScreen_ = ({navigation, route}) => {
         >
           <ButtonWithCenteredText
             onPress={() => submit()}
-            borderWidth={0}
             secondary={true}
             loading={isLoading}
             extraChildren={

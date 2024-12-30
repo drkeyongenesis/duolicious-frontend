@@ -66,6 +66,8 @@ import {
 import { InviteEntrypoint } from './invite';
 import { InvitePicker } from './invite';
 import { AudioBio } from './audio-bio';
+import { useScrollbar } from './navigation/scroll-bar-hooks';
+import { WEB_VERSION } from '../env/env';
 
 const formatHeight = (og: OptionGroup<OptionGroupInputs>): string | undefined => {
   if (!isOptionGroupSlider(og.input)) return '';
@@ -195,11 +197,20 @@ const ProfileTab_ = ({navigation}) => {
     })();
   }, []);
 
+  const {
+    onLayout,
+    onContentSizeChange,
+    onScroll,
+    showsVerticalScrollIndicator,
+    observeListRef,
+  } = useScrollbar('profile');
+
   return (
     <SafeAreaView style={styles.safeAreaView}>
       <DuoliciousTopNavBar/>
       {data &&
         <ScrollView
+          ref={observeListRef}
           contentContainerStyle={{
             paddingLeft: 10,
             paddingRight: 10,
@@ -208,6 +219,10 @@ const ProfileTab_ = ({navigation}) => {
             width: '100%',
             alignSelf: 'center',
           }}
+          onLayout={onLayout}
+          onContentSizeChange={onContentSizeChange}
+          onScroll={onScroll}
+          showsVerticalScrollIndicator={showsVerticalScrollIndicator}
         >
           <Title>Profile Pictures</Title>
           <Images_ data={data}/>
@@ -301,6 +316,8 @@ const DisplayNameAndAboutPerson = ({navigation, data}) => {
         defaultValue={data?.name ?? ''}
         onChangeText={onChangeNameText}
         style={{
+          backgroundColor: '#eee',
+          borderWidth: 0,
           marginLeft: 0,
           marginRight: 0,
         }}
@@ -325,6 +342,8 @@ const DisplayNameAndAboutPerson = ({navigation, data}) => {
         onChangeText={onChangeAboutText}
         numberOfLines={8}
         style={{
+          backgroundColor: '#eee',
+          borderWidth: 0,
           height: 200,
         }}
       />
@@ -801,6 +820,18 @@ const AboutDuolicious = () => {
         {} to provide feedback, report abuse, or submit any other concerns or
         queries you have.
       </DefaultText>
+
+      {Platform.OS === 'web' &&
+        <DefaultText
+          style={{
+            marginTop: 25,
+            textAlign: 'center',
+            color: '#999',
+          }}
+        >
+          Duolicious Web Version {WEB_VERSION}
+        </DefaultText>
+      }
     </View>
   );
 };

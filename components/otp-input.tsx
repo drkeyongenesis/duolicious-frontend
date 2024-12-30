@@ -166,6 +166,7 @@ const OtpInput = (props: Props) => {
         {
           state.map((digitState, i) =>
             <DefaultTextInput
+              placeholder=""
               key={i}
               autoFocus={i === 0}
               innerRef={e => inputRefs.current[i] = e}
@@ -178,11 +179,12 @@ const OtpInput = (props: Props) => {
               inputMode="numeric"
               keyboardType="number-pad"
               style={{
+                padding: 0,
                 width: 35,
                 margin: 5,
                 marginLeft: undefined,
                 marginRight: undefined,
-                fontSize: 20,
+                fontSize: 22,
                 backgroundColor: 'white',
                 borderColor: digitState.isFocused ? '#222' : '#ccc',
                 borderWidth: Platform.OS === 'web' ? 0 : 3,

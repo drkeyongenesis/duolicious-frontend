@@ -6,7 +6,7 @@ import { ExpoConfig } from 'expo/config';
 const config: ExpoConfig = {
   name: 'Duolicious',
   slug: 'duolicious',
-  version: "26.0.0",
+  version: "27.0.0",
   orientation: "portrait",
   icon: './assets/icon.png',
   newArchEnabled: true,
@@ -29,6 +29,8 @@ const config: ExpoConfig = {
     imagesUrl: process.env.DUO_IMAGES_URL,
     audioUrl: process.env.DUO_AUDIO_URL,
     statusUrl: process.env.DUO_STATUS_URL,
+    webUrl: process.env.DUO_WEB_BASE_URL,
+    webVersion: process.env.DUO_WEB_VERSION,
   },
   web: {
     favicon: "./assets/favicon.png"
